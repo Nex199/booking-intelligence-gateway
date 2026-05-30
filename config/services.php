@@ -40,4 +40,8 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    'mock_service' => [
+        'secret' => env('MOCK_SERVICE_SECRET_TOKEN'),
+    ],
+
 ];

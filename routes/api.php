@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Middleware\VerifyWebhookToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,7 @@ Route::get('/ping', function(){
 
 
 Route::post('/webhooks/mock-booking', [WebhookController::class, 'handleMockBooking'])
-        ->name('webhooks.mock-booking');
+->middleware(VerifyWebhookToken::class)
+->name('webhooks.mock-booking');
 
 Route::get('/deals', [DealController::class, 'index'])->name('api.deals.index');
