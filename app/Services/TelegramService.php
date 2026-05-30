@@ -21,7 +21,7 @@ class TelegramService
         ])->post($url, [
             'chat_id' => $this->chatId,
             'text' => $text,
-        ]);
+        ])->throw();
         return $response;
     }
 }

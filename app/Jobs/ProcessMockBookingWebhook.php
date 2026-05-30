@@ -12,9 +12,24 @@ class ProcessMockBookingWebhook implements ShouldQueue
 {
     use Queueable;
     
+    public $tries = 3;
+    public $backoff = [5,10, 20];
+
     public function __construct(
         public int $logId)
     {
+    }
+
+    public function failed(\Throwable $exception){
+        IntegrationLog::create([
+            'source' => 'telegram',
+            'event_type' => 'message.sent',
+            'payload' => [
+                'original_log_id' => $this->logId
+            ],
+            'status' => 'permanent_failure',
+            'error_message' => $exception->getMessage(),
+        ]);
     }
 
     public function handle(TelegramService $telegramService): void
@@ -27,16 +42,13 @@ class ProcessMockBookingWebhook implements ShouldQueue
             $log->status = 'processed';
             if($deal->status === 'won'){
                 $text = "Сделка #$deal->id $deal->title переведена в статус WON! Внешний ID брони: $deal->external_id";
+                
+                try{
                 $response = $telegramService->sendMessage($text);
-                if($response->successful()){
-                    $status = 'success';
-                }
-                else{
-                    $status = 'failed';
-                }
+
                 IntegrationLog::create([
                     'source' => 'telegram',
-                    'status' => $status,
+                    'status' => $response->successful() ? 'success' : 'failed',
                     'payload' => [
                         'type' => 'outgoing',
                         'text' => $text,
@@ -45,6 +57,21 @@ class ProcessMockBookingWebhook implements ShouldQueue
                     ],
                     'event_type' => 'message.sent'
                 ]);
+                }
+                catch(\Throwable $exception){
+                    IntegrationLog::create([
+                        'source' => 'telegram',
+                        'status' => 'failed_attempt',
+                        'error_message' => $exception->getMessage(),
+                        'payload' => [
+                            'type' => 'outgoing',
+                            'text' => $text,
+                        ],
+                        'event_type' => 'message.sent'
+                    ]);
+
+                    throw $exception;
+                }
             }
         }
         else{
