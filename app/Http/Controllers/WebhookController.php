@@ -1,27 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Actions\StoreWebhookLogAction;
+use App\Http\Requests\WebhookRequest;
+use App\Jobs\ProcessIncomingLeadJob;
 use App\Jobs\ProcessMockBookingWebhook;
-use App\Models\Deal;
-use App\Models\IntegrationLog;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class WebhookController extends Controller
 {
-    public function handleMockBooking(Request $request){
-        if(IntegrationLog::where('event_id', $request->event_id)->first()){
-            return response()->json(['status' => 'duplicate', 'message' => 'Event already processed'], 200);
+    public function handleMockBooking(WebhookRequest $request, StoreWebhookLogAction $action): JsonResponse
+    {
+        $data = $request->validated();
+        $result = $action->execute($data);
+        if ($result === 'duplicate') {
+            return response()->json(['status' => $result, 'message' => 'Event already processed'], 200);
         }
-        $log = new IntegrationLog();
-        $log->event_id = $request->event_id;
-        $log->source = 'mock-booking';
-        $log->event_type = $request->event_type;
-        $log->external_id = $request->external_id;
-        $log->payload = $request->all();
-        $log->status = 'received';
-        $log->save();
-        ProcessMockBookingWebhook::dispatch($log->id);
+
+        match ($result->event_type) {
+            'lead.created' => ProcessIncomingLeadJob::dispatch($result->id),
+            'deal.status_changed' => ProcessMockBookingWebhook::dispatch($result->id),
+            default => throw new \InvalidArgumentException("Неизвестный тип события: {$result->event_type}"),
+        };
+
         return response()->json(['status' => 'received'], 200);
     }
 }

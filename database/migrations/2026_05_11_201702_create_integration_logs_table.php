@@ -20,6 +20,7 @@ return new class extends Migration
             $table->json('payload');
             $table->string('status');
             $table->text('error_message')->nullable();
+            $table->unsignedInteger('latency_ms')->nullable();
             $table->timestamps();
         });
     }

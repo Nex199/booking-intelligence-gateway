@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use App\Models\IntegrationLog;
@@ -17,10 +19,9 @@ class VerifyWebhookToken
     public function handle(Request $request, Closure $next): Response
     {
         $token = $request->header('X-Webhook-Secret');
-        if($token === config('services.mock_service.secret')){
+        if ($token === config('services.mock_service.secret')) {
             return $next($request);
-        }
-        else{
+        } else {
             IntegrationLog::create([
                 'source' => 'security-guard',
                 'status' => 'unauthorized_attempt',
@@ -29,8 +30,9 @@ class VerifyWebhookToken
                 'payload' => $request->all(),
                 'error_message' => 'The wrong secret',
             ]);
+
             return response()->json(['error' => 'Forbidden'], 403);
         }
-        
+
     }
 }

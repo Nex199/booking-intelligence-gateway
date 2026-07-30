@@ -44,4 +44,12 @@ return [
         'secret' => env('MOCK_SERVICE_SECRET_TOKEN'),
     ],
 
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+    ],
+
+    'proxy' => [
+        'poland' => env('PROXY_POLAND'),
+    ],
+
 ];
