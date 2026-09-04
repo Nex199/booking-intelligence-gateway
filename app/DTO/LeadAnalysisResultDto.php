@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\DTO;
 
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class LeadAnalysisResultDto
 {

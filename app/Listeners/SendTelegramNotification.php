@@ -12,18 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendTelegramNotification implements ShouldQueue
 {
-    /**
-     * Create the event listener.
-     */
-    public function __construct(protected TelegramService $telegramService)
-    {
-        //
-    }
-
-    /**
-     * Handle the event.
-     */
-    public function handle(DealStatusChanged $event, StoreWebhookLogAction $storeWebhookLogAction): void
+    public function handle(DealStatusChanged $event, StoreWebhookLogAction $storeWebhookLogAction, TelegramService $telegramService): void
     {
         try {
             $deal = $event->deal;
@@ -34,7 +23,7 @@ class SendTelegramNotification implements ShouldQueue
             $text = "Сделка #$deal->id $deal->title переведена в статус WON! Внешний ID брони: $deal->external_id";
 
             $start = microtime(true);
-            $data = $this->telegramService->sendMessage($text);
+            $data = $telegramService->sendMessage($text);
             $end = microtime(true);
 
             $latencyMs = (int) round(($end - $start) * 1000);

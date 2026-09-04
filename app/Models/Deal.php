@@ -58,6 +58,7 @@ class Deal extends Model
         'external_id',
         'status',
         'external_status',
+        'amocrm_lead_id',
         'guest_name',
         'guest_phone',
         'guest_email',

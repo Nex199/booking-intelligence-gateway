@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Jobs\ProcessIncomingLeadJob;
-use App\Models\Deal;
 use App\Models\IntegrationLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -78,14 +76,15 @@ class ProcessIncomingLeadJobTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('integration_logs', [
-            'event_id' => 'ai_' . $log->event_id,
+            'event_id' => 'ai_'.$log->event_id,
             'source' => 'gemini',
         ]);
 
-        Http::assertSent(function($x){
+        Http::assertSent(function ($x) {
             $body = $x->body();
-            return !str_contains($body, 'chelick@gmail.com')
-            && !str_contains($body, '79991234567')
+
+            return ! str_contains($body, 'chelick@gmail.com')
+            && ! str_contains($body, '79991234567')
             && str_contains($body, '[EMAIL_REDACTED]')
             && str_contains($body, '[PHONE_REDACTED]');
         });
@@ -127,7 +126,7 @@ class ProcessIncomingLeadJobTest extends TestCase
                 'message' => 'какойто непонятный текст',
                 'guest_phone' => '79991234567',
             ],
-            'status' => 'received',            
+            'status' => 'received',
         ]);
 
         ProcessIncomingLeadJob::dispatchSync($log->id);
@@ -137,4 +136,3 @@ class ProcessIncomingLeadJobTest extends TestCase
         ]);
     }
 }
-

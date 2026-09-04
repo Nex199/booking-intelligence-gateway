@@ -56,7 +56,7 @@ class LeadAnalysisResultDtoTest extends TestCase
             'confidenceScore' => 7,
             'reason' => '<a>Просто</a>',
         ];
-        
+
         $dto = LeadAnalysisResultDto::fromArray($data, 250);
 
         $expected = [
@@ -72,5 +72,4 @@ class LeadAnalysisResultDtoTest extends TestCase
 
         $this->assertSame($expected, $dto->toArray());
     }
-    
 }

@@ -15,6 +15,8 @@ class CheckStuckDeals extends Command
 
     protected $description = 'Checking for forgotten transactions';
 
+    // нужно будет обновить
+
     public function handle()
     {
         $telegramService = app(TelegramService::class);

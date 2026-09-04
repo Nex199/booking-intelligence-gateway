@@ -62,6 +62,18 @@ class WebhookRequest extends FormRequest
                 'string',
             ],
 
+            'guest_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'hotel_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
             'source' => [
                 'required',
                 'string',

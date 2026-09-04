@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('external_id')->nullable()->unique();
             $table->string('status')->default('new');
             $table->string('external_status')->nullable();
+            $table->unsignedBigInteger('amocrm_lead_id')->nullable();
             $table->string('guest_name')->nullable();
             $table->string('guest_phone')->nullable();
             $table->string('guest_email')->nullable();

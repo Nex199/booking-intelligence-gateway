@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Actions\StoreWebhookLogAction;
+use App\Events\IncomingLeadProcessed;
 use App\Exceptions\GeminiApiException;
 use App\Models\Deal;
 use App\Models\IntegrationLog;
+use App\Services\AmoCrmService;
 use App\Services\DataAnonymizationService;
 use App\Services\GeminiAiService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,16 +30,26 @@ class ProcessIncomingLeadJob implements ShouldQueue
         public int $logId
     ) {}
 
-    public function handle(GeminiAiService $geminiAiService, DataAnonymizationService $dataAnonymizationService, StoreWebhookLogAction $storeWebhookLogAction): void
+    public function handle(GeminiAiService $geminiAiService, DataAnonymizationService $dataAnonymizationService, StoreWebhookLogAction $storeWebhookLogAction, AmoCrmService $amoCrmService): void
     {
         $log = IntegrationLog::findOrFail($this->logId);
 
         $guestPhone = $log->payload['guest_phone'];
         $message = $log->payload['message'];
-        $deal = Deal::query()
-            ->where('guest_phone', $guestPhone)
-            ->whereNotIn('status', ['lost', 'won'])
-            ->first();
+        $deal = null;
+        if ($log->external_id) {
+            $deal = Deal::query()
+                ->where('external_id', $log->external_id)
+                ->whereNotIn('status', ['won', 'lost'])
+                ->first();
+        }
+
+        if (! $deal) {
+            $deal = Deal::query()
+                ->where('guest_phone', $guestPhone)
+                ->whereNotIn('status', ['lost', 'won'])
+                ->first();
+        }
 
         if (! $deal) {
             $deal = new Deal;
@@ -46,6 +58,9 @@ class ProcessIncomingLeadJob implements ShouldQueue
             $deal->title = 'Новая бронь';
             $deal->guest_phone = $guestPhone;
             $deal->guest_email = $log->payload['guest_email'] ?? null;
+            $deal->guest_name = $log->payload['guest_name'] ?? null;
+            $deal->hotel_name = $log->payload['hotel_name'] ?? null;
+            $deal->source = $log->payload['source'] ?? null;
             $deal->chat_history = '';
         }
 
@@ -69,6 +84,8 @@ class ProcessIncomingLeadJob implements ShouldQueue
             $deal->guest_preferences = $result->guestPreferences;
             $deal->ai_analysis = $result->toArray();
             $deal->save();
+
+            event(new IncomingLeadProcessed($deal, $result, $log->event_id));
 
             $storeWebhookLogAction->execute([
                 'event_id' => 'ai_'.$log->event_id,
@@ -94,8 +111,7 @@ class ProcessIncomingLeadJob implements ShouldQueue
             $log->error_message = $e->getMessage();
             $log->save();
             throw $e;
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             $log->status = 'failed_attempt';
             $log->error_message = $e->getMessage();
             $log->save();

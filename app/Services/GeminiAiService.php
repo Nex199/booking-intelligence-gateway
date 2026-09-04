@@ -102,9 +102,9 @@ PROMPT;
             $start = microtime(true);
 
             $response = Http::retry(3, 100)
-            ->timeout(15)
-            ->withOptions(['proxy' => config('services.proxy.poland')])
-            ->post($url, $payload);
+                ->timeout(15)
+                ->withOptions(['proxy' => config('services.proxy.poland')])
+                ->post($url, $payload);
 
             $end_time = microtime(true);
             $latencyMs = (int) round(($end_time - $start) * 1000);

@@ -52,4 +52,14 @@ return [
         'poland' => env('PROXY_POLAND'),
     ],
 
+    'amocrm' => [
+        'client_id' => env('AMOCRM_CLIENT_ID'),
+        'client_secret' => env('AMOCRM_CLIENT_SECRET'),
+        'redirect_uri' => env('AMOCRM_REDIRECT_URI'),
+
+        'fields' => [
+            'guest_preferences' => env('AMOCRM_FIELD_GUEST_PREFERENCES'),
+        ],
+    ],
+
 ];

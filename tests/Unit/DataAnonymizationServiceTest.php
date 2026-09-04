@@ -14,7 +14,7 @@ class DataAnonymizationServiceTest extends TestCase
         $service = new DataAnonymizationService;
 
         $result = $service->anonymize('');
-        
+
         $this->assertEquals('', $result);
     }
 
@@ -25,7 +25,7 @@ class DataAnonymizationServiceTest extends TestCase
         $expected = 'Напишите на почту [EMAIL_REDACTED] по вопросам брони';
 
         $result = $service->anonymize($text);
-        
+
         $this->assertEquals($expected, $result);
     }
 
@@ -36,7 +36,7 @@ class DataAnonymizationServiceTest extends TestCase
         $expected = 'Хочу забронировать номер, позвоните по этому номеру [PHONE_REDACTED] на 2026-07-30';
 
         $result = $service->anonymize($text);
-        
+
         $this->assertEquals($expected, $result);
     }
 
@@ -46,7 +46,7 @@ class DataAnonymizationServiceTest extends TestCase
         $text = 'Здравствуйте, хочу забронировать номер 17 числа на 3 дня';
 
         $result = $service->anonymize($text);
-        
+
         $this->assertEquals($text, $result);
     }
 }
