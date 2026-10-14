@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Middleware\VerifyIpWhiteList;
 use App\Http\Middleware\VerifyWebhookToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,7 +19,7 @@ Route::get('/ping', function () {
 });
 
 Route::post('/webhooks/mock-booking', [WebhookController::class, 'handleMockBooking'])
-    ->middleware(VerifyWebhookToken::class)
+    ->middleware([VerifyIpWhiteList::class, VerifyWebhookToken::class, 'throttle:mock-booking'])
     ->name('webhooks.mock-booking');
 
 Route::get('/deals', [DealController::class, 'index'])->name('api.deals.index');

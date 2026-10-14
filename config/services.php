@@ -42,6 +42,7 @@ return [
 
     'mock_service' => [
         'secret' => env('MOCK_SERVICE_SECRET_TOKEN'),
+        'allowed_ips' => array_filter(explode(',', env('MOCK_SERVICE_ALLOWED_IPS', '127.0.0.1,::1'))),
     ],
 
     'gemini' => [

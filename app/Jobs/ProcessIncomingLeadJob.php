@@ -30,7 +30,7 @@ class ProcessIncomingLeadJob implements ShouldQueue
         public int $logId
     ) {}
 
-    public function handle(GeminiAiService $geminiAiService, DataAnonymizationService $dataAnonymizationService, StoreWebhookLogAction $storeWebhookLogAction, AmoCrmService $amoCrmService): void
+    public function handle(GeminiAiService $geminiAiService, DataAnonymizationService $dataAnonymizationService, StoreWebhookLogAction $storeWebhookLogAction): void
     {
         $log = IntegrationLog::findOrFail($this->logId);
 
@@ -85,7 +85,7 @@ class ProcessIncomingLeadJob implements ShouldQueue
             $deal->ai_analysis = $result->toArray();
             $deal->save();
 
-            event(new IncomingLeadProcessed($deal, $result, $log->event_id));
+            event(new IncomingLeadProcessed($deal, $log->event_id, $result));
 
             $storeWebhookLogAction->execute([
                 'event_id' => 'ai_'.$log->event_id,

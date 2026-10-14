@@ -9,6 +9,8 @@ use App\Models\IntegrationLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Event;
+use App\Events\IncomingLeadProcessed;
 
 class ProcessIncomingLeadJobTest extends TestCase
 {
@@ -57,7 +59,8 @@ class ProcessIncomingLeadJobTest extends TestCase
             ],
             'status' => 'received',
         ]);
-
+        
+        Event::fake([IncomingLeadProcessed::class]);
         ProcessIncomingLeadJob::dispatchSync($log->id);
 
         $this->assertDatabaseHas('deals', [
@@ -88,6 +91,8 @@ class ProcessIncomingLeadJobTest extends TestCase
             && str_contains($body, '[EMAIL_REDACTED]')
             && str_contains($body, '[PHONE_REDACTED]');
         });
+
+        Event::assertDispatched(IncomingLeadProcessed::class);
     }
 
     public function test_sets_manual_review_when_confidence_score_is_low()
@@ -125,14 +130,18 @@ class ProcessIncomingLeadJobTest extends TestCase
             'payload' => [
                 'message' => 'какойто непонятный текст',
                 'guest_phone' => '79991234567',
+                'source' => 'webform',
             ],
             'status' => 'received',
         ]);
 
+        Event::fake(IncomingLeadProcessed::class);
         ProcessIncomingLeadJob::dispatchSync($log->id);
 
         $this->assertDatabaseHas('deals', [
             'guest_phone' => '79991234567',
         ]);
+
+        Event::assertDispatched(IncomingLeadProcessed::class);
     }
 }

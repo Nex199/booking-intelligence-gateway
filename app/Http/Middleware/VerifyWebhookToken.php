@@ -25,8 +25,8 @@ class VerifyWebhookToken
             IntegrationLog::create([
                 'source' => 'security-guard',
                 'status' => 'unauthorized_attempt',
-                'event_type' => $request->input('event_type'),
-                'external_id' => $request->input('external_id'),
+                'event_type' => $request->input('event_type') ?? 'unknown',
+                'external_id' => $request->input('external_id') ?? 'unknown',
                 'payload' => $request->all(),
                 'error_message' => 'The wrong secret',
             ]);

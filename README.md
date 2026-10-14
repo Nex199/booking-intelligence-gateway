@@ -1,58 +1,55 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Booking Intelligence Gateway
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Это шлюз для отеля, который принимает бронирование с сайта и чатов а после передает их в amoCRM.
 
-## About Laravel
+## Стек
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+ - PHP 8.4, Laravel,
+ - PostgreSql 16 (Для сделок),
+ - Redis (Для очередей и кеша)
+ - Docker compose (4 сервиса),
+ - AmoCRM API V4
+ - Telegram Bot API,
+ - Gemini AI,
+ - PHPUnit
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+ ## Как устроен процесс
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+ 1. Входной шлюз и безопасность
+  - Запрос от клиента приходит на /api/webhooks/mock-booking.
+  - Проверяется секретный токен, после проверяется ip на наличие в белом списке и лимит запросов.
+  - Запрос сразу записывается в таблицу integration_logs по уникальному event_id, чтобы отсечь дубликаты.
+ 
+ 2. Мгновенный ответ в очереди
+  - Сервер сразу отдает клиенту статус 200 не заставляя ждать ответа.
+  - Тяжелая обработка отправляется задачей в очередь Redis.
 
-## Learning Laravel
+ 3. Разделение логики
+  - Веб форма: Клиент вводит данные в форме и они после проверки идут напрямую в таблицу deals
+  - Чат: Клиент пишет сообщения в чат, его почта и номер телефона анонимизируются, а текст отправляется в Gemini AI, который по строгой
+  JSON схеме вытаскивает даты заезда, количество гостей, бюджет и пожелания.
+ 
+ 4. Синхронизация с amoCRM
+  - После сохранения сделки срабатывает событие IncomingLeadProcessed
+  - Асинхронный слушатель отправляет данные в amoCRM API, а именно создает либо обновляет сделку
+  и заполняет кастомные поля.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+ 5. Зависшие сделки
+  - Фоновая команда crm:check-stuck-deals каждую минуту проверяет сделки в базе
+  - Если менеджер не взял сделку в течении 15 минут то бот шлет сообщение руководителю в Telegram
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Запуск проекта
 
 ```bash
-composer require laravel/boost --dev
+# 1. Настройка окружения
+cp .env.example .env
 
-php artisan boost:install
+# 2. Сборка и запуск контейнеров в фоне
+docker compose up -d 
+
+# 3. Применение миграций 
+docker compose exec app php artisan migrate
+
+# 4. Запуск тестов
+docker compose exec app php artisan test
 ```
-
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

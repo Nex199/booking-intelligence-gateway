@@ -15,34 +15,32 @@ class CheckStuckDeals extends Command
 
     protected $description = 'Checking for forgotten transactions';
 
-    // нужно будет обновить
-
     public function handle()
     {
         $telegramService = app(TelegramService::class);
-        $deals = Deal::where('status', '<>', 'won')
-            ->where('updated_at', '<=', now()->subSecond(1))
-            ->get();
-
-        if ($deals->isEmpty()) {
+        $stuckDealQuery = Deal::query()
+            ->whereNotIn('status', ['won', 'lost'])
+            ->where('updated_at', '<=', now()->subMinute(15));
+        $dealStuckCount = (clone $stuckDealQuery)->count();
+        $dealStuckTop = (clone $stuckDealQuery)->oldest('updated_at')->take(10)->get();
+        if ($dealStuckCount == 0) {
             $this->info('Зависших сделок нет');
         } else {
             try {
-                $message = "⚠️ Внимание! Найдено зависших сделок {$deals->count()}шт.\n";
-                if ($deals->count() > 10) {
+                $message = "⚠️ Внимание! Найдено зависших сделок {$dealStuckCount}шт.\n";
+                if ($dealStuckCount > 10) {
                     $message .= 'Самые старые 10 сделок:';
-                    $deals = $deals->take(10);
                 } else {
-                    $message .= 'Сделки:';
+                    $message .= 'Все зависшие сделки:';
                 }
 
-                foreach ($deals as $deal) {
-                    $message .= "id: $deal->id\n Название: $deal->title\n Статус: $deal->status\n Дата обновления: $deal->updated_at\n \n ";
+                foreach ($dealStuckTop as $deal) {
+                    $message .= "\nid: $deal->id\nНазвание: $deal->title\nСтатус: $deal->status\nДата обновления: $deal->updated_at\n \n ";
                 }
                 $telegramService->sendMessage($message);
             } catch (\Throwable $e) {
-                Log::error('Сбой проверки сделок: '.$e->getMessage());
-                $this->error('Ошибка отправки отчета в Telegram');
+                Log::error('Сбой проверки сделок: ', ['exception' => $e]);
+                $this->error("Ошибка {$e->getMessage()}, в {$e->getFile()} в строке {$e->getLine()}");
             }
         }
     }

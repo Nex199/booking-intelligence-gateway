@@ -29,7 +29,7 @@ class WebhookRequest extends FormRequest
             'event_type' => [
                 'required',
                 'string',
-                'in:deal.status_changed,lead.created',
+                'in:deal.status_changed,lead.created,lead.created_webform',
             ],
             'message' => [
                 'required_if:event_type,lead.created',
@@ -49,7 +49,7 @@ class WebhookRequest extends FormRequest
 
             'guest_phone' => [
                 'string',
-                'required_if:event_type,lead.created',
+                'required_if:event_type,lead.created,lead.created_webform',
             ],
 
             'guest_email' => [
@@ -78,6 +78,12 @@ class WebhookRequest extends FormRequest
                 'required',
                 'string',
             ],
+
+            'guest_preferences' => [
+                'nullable',
+                'string',
+                'max:255',
+            ]
         ];
     }
 

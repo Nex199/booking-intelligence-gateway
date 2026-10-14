@@ -14,13 +14,10 @@ class IncomingLeadProcessed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Create a new event instance.
-     */
     public function __construct(
         public Deal $deal,
-        public LeadAnalysisResultDto $result,
-        public string $correlationId
+        public string $correlationId,
+        public ?LeadAnalysisResultDto $result = null,
     ) {}
 
 }
